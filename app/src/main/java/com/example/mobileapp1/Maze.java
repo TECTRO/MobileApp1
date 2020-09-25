@@ -3,33 +3,44 @@ package com.example.mobileapp1;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.view.MotionEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Maze
+public class Maze implements IGameState
 {
-    List<Cell> Maze;
-    int MazeWidth  = 31;
-    int MazeHeight = 31;
-
-    Random randNumber = new Random();
-    private Paint mPaint = new Paint();
-
-    public Maze(int mazeWidth, int mazeHeight)
+    //CONSTRUCTORS================================
+    public Maze(IChangeState stateChanger, int mazeWidth, int mazeHeight)
     {
+        StateChanger = stateChanger;
         MazeHeight = mazeHeight;
         MazeWidth = mazeWidth;
         Maze = new ArrayList<Cell>();
         Create();
+        StartGame();
     }
 
-    public Maze()
+    public Maze(IChangeState stateChanger)
     {
+        StateChanger = stateChanger;
         Maze = new ArrayList<Cell>();
         Create();
+        StartGame();
     }
+    //============================================
+
+    IChangeState StateChanger;
+    List<Cell> Maze;
+    int MazeWidth  = 7;
+    int MazeHeight = 7;
+
+    Player player;
+    Cell finish;
+
+    Random randNumber = new Random();
+    private Paint mPaint = new Paint();
 
     private void Create()
     {
@@ -66,36 +77,20 @@ public class Maze
             prevRow = newRow;
         }
     }
-
-    public void Draw(Canvas canvas)
-    {
-        int minSize = Math.min(canvas.getHeight(),canvas.getWidth());
-
-        float x = (canvas.getHeight() - minSize) /2.0f;
-        float y = (canvas.getWidth() - minSize) /2.0f;
-
-        float cellSize = minSize / (float)Math.max(MazeHeight,MazeWidth);
-        // mPaint.setStyle(Paint.Style.STROKE);
-
-        for (Cell cur: Maze)
-        {
-            if(cur.IsFilled)
-                mPaint.setColor(Color.BLACK);
-            else
-                mPaint.setColor(Color.BLUE);
-
-            canvas.drawRect(
-                    y+cellSize*cur.Y, x+cellSize*cur.X,
-                    y+cellSize*cur.Y+cellSize, x+cellSize*cur.X+cellSize,
-                    mPaint);
-        }
-    }
-
     public Maze Build()
     {
         Cell root = Maze.get(randNumber.nextInt(Maze.size()));
         recBuild(root);
         return this;
+    }
+    public Maze Rebuild()
+    {
+        for (Cell cur : Maze)
+        {
+            cur.IsBuilt = false;
+            cur.IsFilled = true;
+        }
+        return Build();
     }
 
     private void recBuild(Cell cell)
@@ -185,5 +180,136 @@ public class Maze
                 }; break;
             }
         }
+    }
+//sqrt(pow(x2 – x1, 2) + pow(y2 – y1, 2))
+    public Cell GetAnyCell(CellFilter filter)
+    {
+        switch (filter)
+        {
+            default: return Maze.get(randNumber.nextInt(Maze.size()));
+            case OPENED:
+                {
+                    ArrayList<Cell> Opened = new ArrayList<Cell>();
+                    for (Cell cur: Maze)
+                        if(!cur.IsFilled)
+                            Opened.add(cur);
+                        return Opened.get(randNumber.nextInt(Opened.size()));
+                }
+            case CLOSED:{
+                ArrayList<Cell> Closed = new ArrayList<Cell>();
+                for (Cell cur: Maze)
+                    if(cur.IsFilled)
+                        Closed.add(cur);
+                return Closed.get(randNumber.nextInt(Closed.size()));
+            }
+        }
+    }
+    public Cell GetAnyCell(Cell point, float MinRange)
+    {
+        ArrayList<Cell> Opened = new ArrayList<Cell>();
+        for (Cell cur: Maze)
+            if(!cur.IsFilled && Math.sqrt(Math.pow(cur.X - point.X,2.0f) + Math.pow(cur.Y - point.Y, 2))>MinRange)
+                Opened.add(cur);
+        return Opened.get(randNumber.nextInt(Opened.size()));
+    }
+
+    @Override
+    public void FlingHandle(MotionEvent e1, MotionEvent e2) {
+        if(player!=null)
+        {
+            final float mDist = 100;
+            float xDiff = e1.getX() - e2.getX();
+            float yDiff = e1.getY() - e2.getY();
+            if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                if (xDiff > 0)
+                    player.move(Player.sides.LEFT);
+                else
+                    player.move(Player.sides.RIGHT);
+            }
+            if (Math.abs(yDiff) > Math.abs(xDiff)) {
+                if (yDiff > 0)
+                    player.move(Player.sides.UP);
+                else
+                    player.move(Player.sides.DOWN);
+            }
+
+            if(player.Location == finish)
+                StateChanger.ChangeState(Menu.class.getName(), null);
+        }
+    }
+
+    @Override
+    public void TapHandle(MotionEvent e) {
+
+    }
+
+    @Override
+    public void TapDownHandle(MotionEvent e) {
+
+    }
+
+    @Override
+    public void DoubleTapHandle(MotionEvent e) {
+        StartGame();
+    }
+
+    @Override
+    public void DrawHandle(Canvas canvas) {
+        int minSize = Math.min(canvas.getHeight(),canvas.getWidth());
+
+        float x = (canvas.getHeight() - minSize) /2.0f;
+        float y = (canvas.getWidth() - minSize) /2.0f;
+
+        float cellSize = minSize / (float)Math.max(MazeHeight,MazeWidth);
+        // mPaint.setStyle(Paint.Style.STROKE);
+
+        for (Cell cur: Maze)
+        {
+            if(cur.IsFilled)
+                mPaint.setColor(Color.BLACK);
+            else
+                mPaint.setColor(Color.BLUE);
+
+            canvas.drawRect(
+                    y+cellSize*cur.Y,
+                    x+cellSize*cur.X,
+                    y+cellSize*cur.Y+cellSize,
+                    x+cellSize*cur.X+cellSize,
+                    mPaint);
+        }
+
+        if (finish!=null)
+        {
+            mPaint.setColor(Color.RED);
+            canvas.drawCircle(
+                    y+cellSize*finish.Y+cellSize/2.0f,
+                    x+cellSize*finish.X+cellSize/2.0f,
+                    cellSize/2.0f,
+                    mPaint);
+        }
+
+        if(player!=null)
+        {
+            mPaint.setColor(Color.YELLOW);
+            canvas.drawCircle(
+                    y+cellSize*player.Location.Y+cellSize/2.0f,
+                    x+cellSize*player.Location.X+cellSize/2.0f,
+                    cellSize/2.0f,
+                    mPaint);
+        }
+    }
+
+    public enum CellFilter
+    {
+        ANY,
+        OPENED,
+        CLOSED
+    }
+
+    public void StartGame()
+    {
+        Rebuild();
+        player = new Player(GetAnyCell(CellFilter.OPENED));
+        finish = GetAnyCell(player.Location,(MazeWidth+MazeHeight)/4.0f);
     }
 }
