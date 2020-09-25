@@ -91,10 +91,11 @@ public class Maze
         }
     }
 
-    public void Build()
+    public Maze Build()
     {
         Cell root = Maze.get(randNumber.nextInt(Maze.size()));
         recBuild(root);
+        return this;
     }
 
     private void recBuild(Cell cell)
