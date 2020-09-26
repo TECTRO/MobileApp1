@@ -1,7 +1,9 @@
 package com.example.mobileapp1;
 
+import android.content.Context;
 import android.graphics.Canvas;
 import android.view.MotionEvent;
+import android.view.View;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +13,8 @@ public class Game implements IGameState, IChangeState
 {
     //SINGLETON========================
     private static Game current;
+    public static View ViewContext;
+
     public static Game CreateInstance()
     {
         if(current == null) current = new Game();
@@ -18,11 +22,9 @@ public class Game implements IGameState, IChangeState
     }
     private Game()
     {
-        GameStates = Arrays.asList(new IGameState[]
-        {
-            new Maze(this),
-                new Menu(this)
-        });
+        GameStates = Arrays.asList(
+                new Maze(this),
+                new Menu(this));
 
         ActiveState = GameStates.get(0);
     }
@@ -32,34 +34,22 @@ public class Game implements IGameState, IChangeState
 
 
     @Override
-    public void FlingHandle(MotionEvent e1, MotionEvent e2) {
-        ActiveState.FlingHandle(e1,e2);
-    }
-
+    public void FlingHandle(MotionEvent e1, MotionEvent e2) { ActiveState.FlingHandle(e1,e2); }
     @Override
-    public void TapHandle(MotionEvent e) {
-        ActiveState.TapHandle(e);
-    }
-
+    public void TapHandle(MotionEvent e) { ActiveState.TapHandle(e); }
     @Override
-    public void TapDownHandle(MotionEvent e) {
-
-    }
-
+    public void TapDownHandle(MotionEvent e) { ActiveState.TapDownHandle(e); }
     @Override
-    public void DoubleTapHandle(MotionEvent e) {
-        ActiveState.DoubleTapHandle(e);
-    }
-
+    public void DoubleTapHandle(MotionEvent e) { ActiveState.DoubleTapHandle(e); }
     @Override
     public void DrawHandle(Canvas canvas) {
-        ActiveState.DrawHandle(canvas);
-    }
-
+        ActiveState.DrawHandle(canvas); }
     @Override
     public void ChangeState(String stateName, String[] args) {
         for (IGameState cur : GameStates)
             if(cur.getClass().getName() == stateName)
                 ActiveState = cur;
     }
+    @Override
+    public void Invalidate() { if(ViewContext!=null) ViewContext.invalidate(); }
 }

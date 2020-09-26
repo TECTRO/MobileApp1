@@ -24,9 +24,8 @@ public class MainActivity
         super.onCreate(savedInstanceState);
 
         game = Game.CreateInstance();
-
-        CurrentView = new Draw2D(this, game);
-        setContentView(CurrentView);
+        Game.ViewContext = new Draw2D(this, game);
+        setContentView(Game.ViewContext);
 
         gd = new GestureDetectorCompat(this,this);
         gd.setOnDoubleTapListener(this);
@@ -47,7 +46,6 @@ public class MainActivity
     @Override
     public boolean onDoubleTap(MotionEvent e) {
         game.DoubleTapHandle(e);
-        CurrentView.invalidate();
         return false;
     }
 
@@ -59,7 +57,6 @@ public class MainActivity
     @Override
     public boolean onDown(MotionEvent e) {
         game.TapDownHandle(e);
-        CurrentView.invalidate();
         return false;
     }
 
@@ -71,7 +68,6 @@ public class MainActivity
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
         game.TapHandle(e);
-        CurrentView.invalidate();
         return false;
     }
 
@@ -89,7 +85,6 @@ public class MainActivity
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
     {
         game.FlingHandle(e1,e2);
-        CurrentView.invalidate();
         return false;
     }
 }

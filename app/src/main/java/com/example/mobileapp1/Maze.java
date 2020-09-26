@@ -236,23 +236,15 @@ public class Maze implements IGameState
             if(player.Location == finish)
                 StateChanger.ChangeState(Menu.class.getName(), null);
         }
+        StateChanger.Invalidate();
     }
 
     @Override
-    public void TapHandle(MotionEvent e) {
-
-    }
-
+    public void TapHandle(MotionEvent e) { }
     @Override
-    public void TapDownHandle(MotionEvent e) {
-
-    }
-
+    public void TapDownHandle(MotionEvent e) { }
     @Override
-    public void DoubleTapHandle(MotionEvent e) {
-        StartGame();
-    }
-
+    public void DoubleTapHandle(MotionEvent e) { StartGame(); }
     @Override
     public void DrawHandle(Canvas canvas) {
         int minSize = Math.min(canvas.getHeight(),canvas.getWidth());
@@ -311,5 +303,6 @@ public class Maze implements IGameState
         Rebuild();
         player = new Player(GetAnyCell(CellFilter.OPENED));
         finish = GetAnyCell(player.Location,(MazeWidth+MazeHeight)/4.0f);
+        StateChanger.Invalidate();
     }
 }
