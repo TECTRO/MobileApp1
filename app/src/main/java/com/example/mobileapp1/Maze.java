@@ -3,6 +3,9 @@ package com.example.mobileapp1;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
@@ -217,24 +220,17 @@ public class Maze implements IGameState
     public void FlingHandle(MotionEvent e1, MotionEvent e2) {
         if(player!=null)
         {
-            final float mDist = 100;
             float xDiff = e1.getX() - e2.getX();
             float yDiff = e1.getY() - e2.getY();
-            if (Math.abs(xDiff) > Math.abs(yDiff)) {
-                if (xDiff > 0)
-                    player.move(Player.sides.LEFT);
-                else
-                    player.move(Player.sides.RIGHT);
-            }
-            if (Math.abs(yDiff) > Math.abs(xDiff)) {
-                if (yDiff > 0)
-                    player.move(Player.sides.UP);
-                else
-                    player.move(Player.sides.DOWN);
-            }
 
-            if(player.Location == finish)
-                StateChanger.ChangeState(Menu.class.getName(), null);
+            if(xDiff>0 && yDiff>0)
+                player.move(Player.sides.UP);
+            if(xDiff>0 && yDiff<0)
+                player.move(Player.sides.RIGHT);
+            if(xDiff<0 && yDiff>0)
+                player.move(Player.sides.LEFT);
+            if(xDiff<0 && yDiff<0)
+                player.move(Player.sides.DOWN);
         }
         StateChanger.Invalidate();
     }
@@ -245,49 +241,161 @@ public class Maze implements IGameState
     public void TapDownHandle(MotionEvent e) { }
     @Override
     public void DoubleTapHandle(MotionEvent e) { StartGame(); }
+
+    private float GetIsoX(float decX,float decY)
+    {
+        return decX - decY;
+    }
+
+    private float GetIsoY(float decX,float decY)
+    {
+        return (decX + decY)/2.0f;
+    }
+
+    private float GetDecX(float isoX, float isoY)
+    {
+        return  (2.0f * isoY + isoX) / 2.0f;
+    }
+
+    private float GetDecY(float isoX, float isoY)
+    {
+        return  (2.0f * isoY - isoX) / 2.0f;
+    }
+
+    Path path = new Path();
+    private  Path GetIsoPath(Cell drawingCell, float cellSize, float biasX, float biasY)
+    {
+        float x1 = cellSize*drawingCell.X;
+        float y1 = cellSize*drawingCell.Y;
+
+        float x2 = cellSize*drawingCell.X+cellSize;
+        float y2 = cellSize*drawingCell.Y+cellSize;
+
+
+
+        path.moveTo(biasY+GetIsoX(x1,y1),biasX+GetIsoY(x1,y1));
+        path.lineTo(biasY+GetIsoX(x1,y2),biasX+GetIsoY(x1,y2));
+        path.lineTo(biasY+GetIsoX(x2,y2),biasX+GetIsoY(x2,y2));
+        path.lineTo(biasY+GetIsoX(x2,y1),biasX+GetIsoY(x2,y1));
+
+        path.close();
+
+        return path;
+    }
     @Override
     public void DrawHandle(Canvas canvas) {
+        mPaint.setColor(Color.argb(255,44,36,48));
+        canvas.drawRect(0,0,canvas.getWidth(),canvas.getHeight(),mPaint);
+
         int minSize = Math.min(canvas.getHeight(),canvas.getWidth());
 
         float x = (canvas.getHeight() - minSize) /2.0f;
         float y = (canvas.getWidth() - minSize) /2.0f;
+
+        float centerX = canvas.getHeight()/2.0f;
+        float centerY = canvas.getWidth()/2.0f;
 
         float cellSize = minSize / (float)Math.max(MazeHeight,MazeWidth);
         // mPaint.setStyle(Paint.Style.STROKE);
 
         for (Cell cur: Maze)
         {
-            if(cur.IsFilled)
-                mPaint.setColor(Color.BLACK);
-            else
+            //====================================================
+            float x1 = cellSize * cur.X;
+            float y1 = cellSize * cur.Y;
+
+            float x2 = cellSize * cur.X + cellSize;
+            float y2 = cellSize * cur.Y + cellSize;
+
+            if(!cur.IsFilled)
+            {
+                path.moveTo(centerY + GetIsoX(x1, y1), x + GetIsoY(x1, y1));
+                path.lineTo(centerY + GetIsoX(x1, y2), x + GetIsoY(x1, y2));
+                path.lineTo(centerY + GetIsoX(x2, y2), x + GetIsoY(x2, y2));
+                path.lineTo(centerY + GetIsoX(x2, y1), x + GetIsoY(x2, y1));
+
+                path.close();
                 mPaint.setColor(Color.BLUE);
+                canvas.drawPath(path, mPaint);
+                path.reset();
+            }
 
-            canvas.drawRect(
-                    y+cellSize*cur.Y,
-                    x+cellSize*cur.X,
-                    y+cellSize*cur.Y+cellSize,
-                    x+cellSize*cur.X+cellSize,
-                    mPaint);
-        }
+            if(cur.IsFilled) {
+                //mPaint.setColor(Color.argb(150,50,50,50));
 
-        if (finish!=null)
-        {
-            mPaint.setColor(Color.RED);
-            canvas.drawCircle(
-                    y+cellSize*finish.Y+cellSize/2.0f,
-                    x+cellSize*finish.X+cellSize/2.0f,
-                    cellSize/2.0f,
-                    mPaint);
-        }
+                float biasX = x - cellSize / 2.0f;
+                float biasY = centerY;
 
-        if(player!=null)
-        {
-            mPaint.setColor(Color.YELLOW);
-            canvas.drawCircle(
-                    y+cellSize*player.Location.Y+cellSize/2.0f,
-                    x+cellSize*player.Location.X+cellSize/2.0f,
-                    cellSize/2.0f,
-                    mPaint);
+                //path = new Path();
+                //20 20 60
+                //top
+                path.moveTo(biasY+GetIsoX(x1,y1),biasX+GetIsoY(x1,y1));
+                path.lineTo(biasY+GetIsoX(x1,y2),biasX+GetIsoY(x1,y2));
+                path.lineTo(biasY+GetIsoX(x2,y2),biasX+GetIsoY(x2,y2));
+                path.lineTo(biasY+GetIsoX(x2,y1),biasX+GetIsoY(x2,y1));
+
+                path.close();
+                mPaint.setColor(Color.argb(255,20,20,60));
+                canvas.drawPath(path,mPaint);
+                path.reset();
+                //80 84 140
+                //left
+                if(cur.Right == null || !cur.Right.IsFilled)
+                {
+                    path.moveTo(biasY+GetIsoX(x1,y2),biasX+GetIsoY(x1,y2));
+                    path.lineTo(centerY+GetIsoX(x1,y2),x+GetIsoY(x1,y2));
+                    path.lineTo(centerY+GetIsoX(x2,y2),x+GetIsoY(x2,y2));
+                    path.lineTo(biasY+GetIsoX(x2,y2),biasX+GetIsoY(x2,y2));
+
+                    path.close();
+                    mPaint.setColor(Color.argb(255,80,84,140));
+                    canvas.drawPath(path,mPaint);
+                    path.reset();
+                }
+                //path.reset();
+
+                //11 15 45
+                //right
+                if(cur.Bottom == null || !cur.Bottom.IsFilled)
+                {
+                    path.moveTo(biasY + GetIsoX(x2, y2), biasX + GetIsoY(x2, y2));
+                    path.lineTo(centerY + GetIsoX(x2, y2), x + GetIsoY(x2, y2));
+                    path.lineTo(centerY + GetIsoX(x2, y1), x + GetIsoY(x2, y1));
+                    path.lineTo(biasY + GetIsoX(x2, y1), biasX + GetIsoY(x2, y1));
+
+                    path.close();
+                    mPaint.setColor(Color.argb(255,11,15,45));
+                    canvas.drawPath(path,mPaint);
+                    path.reset();
+                }
+                //canvas.drawPath(path, mPaint);
+                mPaint.clearShadowLayer();
+            }
+
+            //====================================================
+
+            if (finish!=null)
+                if(finish == cur)
+                {
+                    mPaint.setColor(Color.RED);
+                    canvas.drawPath(GetIsoPath(finish,cellSize,x,centerY),mPaint);
+                    path.reset();
+                }
+
+            if(player!=null)
+                if(player.Location == cur)
+                {
+                    mPaint.setColor(Color.YELLOW);
+
+                    float xP = cellSize*player.Location.X + cellSize/4.0f;
+                    float yP = cellSize*player.Location.Y+ cellSize/4.0f;
+
+                    canvas.drawCircle(
+                            centerY+GetIsoX(xP,yP),
+                            x+GetIsoY(xP,yP),
+                            cellSize/1.7f,
+                            mPaint);
+                }
         }
     }
 
