@@ -3,10 +3,12 @@ package com.example.mobileapp1;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GestureDetectorCompat;
 
+import android.app.ActionBar;
 import android.os.Bundle;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
 
 public class MainActivity
         extends
@@ -25,8 +27,8 @@ public class MainActivity
 
         game = Game.CreateInstance();
         Game.ViewContext = new Draw2D(this, game);
-        setContentView(Game.ViewContext);
 
+        setContentView(Game.ViewContext);
         gd = new GestureDetectorCompat(this,this);
         gd.setOnDoubleTapListener(this);
     }
@@ -35,6 +37,12 @@ public class MainActivity
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         gd.onTouchEvent(event);
+
+        int Action = event.getAction();
+        if(Action == MotionEvent.ACTION_CANCEL || Action == MotionEvent.ACTION_UP)
+            game.TapHandle(event);
+
+
         return super.onTouchEvent(event);
     }
 
@@ -67,7 +75,6 @@ public class MainActivity
 
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
-        game.TapHandle(e);
         return false;
     }
 

@@ -1,11 +1,10 @@
 package com.example.mobileapp1;
 
-import android.content.Context;
+import android.app.ActionBar;
 import android.graphics.Canvas;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -44,11 +43,19 @@ public class Game implements IGameState, IChangeState
     @Override
     public void DrawHandle(Canvas canvas) {
         ActiveState.DrawHandle(canvas); }
+
+    @Override
+    public void ApplyArgs(String[] args) {
+
+    }
+
     @Override
     public void ChangeState(String stateName, String[] args) {
         for (IGameState cur : GameStates)
-            if(cur.getClass().getName() == stateName)
+            if(cur.getClass().getName() == stateName) {
                 ActiveState = cur;
+                ActiveState.ApplyArgs(args);
+            }
     }
     @Override
     public void Invalidate() { if(ViewContext!=null) ViewContext.invalidate(); }

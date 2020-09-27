@@ -10,6 +10,7 @@ public interface IGameState
     void TapDownHandle(MotionEvent e);
     void DoubleTapHandle(MotionEvent e);
     void DrawHandle(Canvas canvas);
+    void ApplyArgs(String[] args);
 
 
 }
